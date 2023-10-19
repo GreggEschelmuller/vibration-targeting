@@ -92,6 +92,9 @@ home_range_size = home_size * 5
 fs = 500
 timeLimit = 2
 
+# 0 deg rotation matrix to be used between trials (i.e. finding home)
+no_rot = hf.make_rot_mat(0)
+
 # Create NI channels
 # Inputs
 input_task = nidaqmx.Task()
@@ -123,39 +126,35 @@ win = visual.Window(
 # set up clocks
 move_clock = core.Clock()
 home_clock = core.Clock()
-trial_delay_clock = core.Clock()
+pre_trial_clock = core.Clock()
 
 home = visual.Circle(
     win, radius=hf.cm_to_pixel(home_size), lineColor="red", fillColor=None
-)  
+)
 
-home_range = visual.Circle(
-    win, radius=hf.cm_to_pixel(home_range_size), lineColor=None
-)  
+home_range = visual.Circle(win, radius=hf.cm_to_pixel(home_range_size), lineColor=None)
 
-int_cursor = visual.Circle(
-    win, radius=hf.cm_to_pixel(cursor_size), fillColor="Black"
-)  
+int_cursor = visual.Circle(win, radius=hf.cm_to_pixel(cursor_size), fillColor="Black")
 
-target = visual.Circle(
-    win, radius=hf.cm_to_pixel(target_size), fillColor="green"
-) 
+target = visual.Circle(win, radius=hf.cm_to_pixel(target_size), fillColor="green")
 
 # Data dicts for storing data
 trial_summary_data_template = {
     "trial_num": [],
     "move_times": [],
-    "elbow_end": [],
-    "curs_end": [],
-    "error": [],
+    "wrist_x_end": [],
+    "wrist_y_end": [],
+    "curs_x_end": [],
+    "curs_y_end": [],
+    "end_angles": [],
     "block": [],
-    'trial_delay': [],
+    "trial_delay": [],
 }
 
 # For online position data
 position_data_template = {
     "wrist_x": [],
-    'wrist_y': [],
+    "wrist_y": [],
     "time": [],
 }
 
@@ -177,12 +176,14 @@ for block in range(len(ExpBlocks)):
         # Creates dictionary for single trial
         current_trial = copy.deepcopy(trial_summary_data_template)
         position_data = copy.deepcopy(position_data_template)
-        
+
         full_feedback = condition.full_feedback[i]
         terminal_feedback = condition.terminal_feedback[i]  # Load this from the excel
         vibration = condition.vibration[i]
-        timeLimit = 3
         trial_type = condition.trial_type[i]
+        current_target_pos = hf.calc_target_pos(
+            condition.target_pos[i], condition.target_amp[i]
+        )
 
         # Set up vibration output
         if condition.vibration[i] == 0:
@@ -196,39 +197,68 @@ for block in range(len(ExpBlocks)):
 
         rotation = condition.rotation[i]
         clamp = condition.clamp[i]
-        
+
         if rotation:
             rot_mat = hf.make_rot_mat(
                 np.radians(condition.rotation_angle[i] * rot_direction)
             )
         else:
             rot_mat = hf.make_rot_mat(0)
-        
-        
+
         home.draw()
         int_cursor.color = None
         int_cursor.draw()
         win.flip()
 
-        
-        
-        
-        # Sets up target position
-        target_jitter = np.random.uniform(-0.25, 0.25) # jitter target position
-        current_target_pos = hf.calc_target_pos(0, condition.target_amp[i] + target_jitter)
+        # Checks if cursor is close to home and turns it white
+        in_range = False
+        current_pos = hf.get_xy(input_task)
+        int_cursor.pos = current_pos
+        while not in_range:
+            if hf.contains(int_cursor, home_range):
+                in_range = True
+                int_cursor.color = "white"
+                int_cursor.draw()
+                win.flip()
+            current_pos = hf.get_xy(input_task)
+            hf.set_position(current_pos, int_cursor, no_rot)
+            home.draw()
+            win.flip()
 
-        # Run trial
-        input(f"Press enter to start trial # {i+1} ... ")
-        rand_wait = np.random.randint(300, 701)
-        current_trial['trial_delay'].append(rand_wait/1000)
-        block_data['trial_delay'].append(rand_wait/1000)
-        trial_delay_clock.reset()
-        while trial_delay_clock.getTime() < rand_wait/1000:
-            current_time = trial_delay_clock.getTime()
-            current_pos = hf.get_x(input_task)
-            position_data["elbow_pos"].append(current_pos[0])
-            position_data["time"].append(current_time)
+        # Checks if cursor is in home position
+        is_home = False
+        while not is_home:
+            prev_pos = int_cursor.pos
+            if hf.contains(int_cursor, home):
+                home_clock.reset()
+                while True:
+                    current_pos = hf.get_xy(input_task)
+                    home.draw()
+                    hf.set_position(current_pos, int_cursor, no_rot)
+                    win.flip()
 
+                    if home_clock.getTime() > 0.5:
+                        is_home = True
+                        break
+                    if not hf.contains(int_cursor, home):
+                        break
+
+            current_pos = hf.get_xy(input_task)
+            home.draw()
+            hf.set_position(current_target_pos, target, no_rot)
+            hf.set_position(current_pos, int_cursor, no_rot)
+            win.flip()
+
+        pre_trial_clock.reset()
+        while hf.contains(int_cursor, home):
+            current_pos = hf.get_xy(input_task)
+            home.draw()
+            hf.set_position(current_pos, int_cursor, rot_mat)
+            target.draw()
+            win.flip()
+            position_data["wrist_x"].append(current_pos[0])
+            position_data["wrist_y"].append(current_pos[0])
+            position_data["time"].append([pre_trial_clock.getTime()])
 
         if not condition.full_feedback[i]:
             int_cursor.color = None
@@ -236,32 +266,34 @@ for block in range(len(ExpBlocks)):
         # Start vibration
         output_task.write(vib_output)
 
-        # Display target position
-        hf.set_position(current_target_pos, target)
-        win.flip()
-
         # run trial until time limit is reached or target is reached
         move_clock.reset()
         while move_clock.getTime() < timeLimit:
             # Run trial
             current_time = move_clock.getTime()
-            current_pos = hf.get_x(input_task)
+            current_pos = hf.get_xy(input_task)
             target.draw()
             hf.set_position(current_pos, int_cursor)
             win.flip()
 
             # Save position data
-            position_data["elbow_pos"].append(current_pos[0])
+            position_data["wrist_x"].append(current_pos[0])
+            position_data["wrist_y"].append(current_pos[0])
             position_data["time"].append(current_time)
 
-        # if current_vel <= 20:
-        output_task.write([False, False])
-        # Append trial data to storage variables
-        if condition.terminal_feedback[i]:
-            int_cursor.color = "Green"
-            int_cursor.draw()
-            target.draw()
-            win.flip()
+            if hf.calc_amplitude(current_pos) >= hf.cm_to_pixel(
+                condition.target_amp[i]
+            ):
+                output_task.write([False, False])
+                # Show terminal feedback
+                if condition.terminal_feedback[i]:
+                    int_cursor.color = "White"
+                    int_cursor.draw()
+                    target.draw()
+                    win.flip()
+
+                # break trial loop
+                break
 
         # Leave current window for 200ms
         core.wait(0.2, hogCPUperiod=0.2)
@@ -273,27 +305,31 @@ for block in range(len(ExpBlocks)):
         print(f"Trial {i+1} done.")
         print(f"Movement time: {round((current_time*1000),1)} ms")
         print(
-            f"Target position: {condition.target_amp[i]}     Cursor Position: {round(hf.pixel_to_cm(int_cursor.pos[0]),3)}"
+            f"Target position: {condition.target_pos[i]}     Cursor Position: {round(np.degrees(np.arctan2(int_cursor.pos[1], int_cursor.pos[0])), 2)}"
         )
-        print(f"Error: {round((hf.pixel_to_cm(int_cursor.pos[0]) - condition.target_amp[i]),3)}")
+
         print(" ")
 
         # append trial file
         current_trial["move_times"].append(current_time)
-        current_trial["elbow_end"].append(hf.pixel_to_cm(current_pos[0]))
-        current_trial["curs_end"].append(hf.pixel_to_cm(int_cursor.pos[0]))
-        current_trial["error"].append(
-            hf.pixel_to_cm(int_cursor.pos[0]) - condition.target_amp[i]
+        current_trial["wrist_x_end"].append(hf.pixel_to_cm(current_pos[0]))
+        current_trial["wrist_y_end"].append(hf.pixel_to_cm(current_pos[1]))
+        current_trial["curs_x_end"].append(hf.pixel_to_cm(int_cursor.pos[0]))
+        current_trial["curs_y_end"].append(hf.pixel_to_cm(int_cursor.pos[1]))
+        current_trial["end_angles"].append(
+            np.degrees(np.arctan2(int_cursor.pos[1], int_cursor.pos[0]))
         )
         current_trial["trial_num"].append(i + 1)
         current_trial["block"].append(ExpBlocks[block])
 
         # append block data
         block_data["move_times"].append(current_time)
-        block_data["elbow_end"].append(hf.pixel_to_cm(current_pos[0]))
-        block_data["curs_end"].append(hf.pixel_to_cm(int_cursor.pos[0]))
-        block_data["error"].append(
-            hf.pixel_to_cm(int_cursor.pos[0]) - condition.target_amp[i]
+        block_data["wrist_x_end"].append(hf.pixel_to_cm(current_pos[0]))
+        block_data["wrist_y_end"].append(hf.pixel_to_cm(int_cursor.pos[0]))
+        block_data["curs_x_end"].append(hf.pixel_to_cm(int_cursor.pos[0]))
+        block_data["curs_y_end"].append(hf.pixel_to_cm(int_cursor.pos[1]))
+        block_data["end_angles"].append(
+            np.degrees(np.arctan2(int_cursor.pos[1], int_cursor.pos[0]))
         )
         block_data["trial_num"].append(i + 1)
         block_data["block"].append(ExpBlocks[block])
