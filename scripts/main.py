@@ -85,7 +85,7 @@ print("Setting everything up...")
 # ------------------------ Set up --------------------------------
 
 # Variables set up
-cursor_size = 0.1
+cursor_size = 0.075
 target_size = 0.1
 home_size = 0.15
 home_range_size = home_size * 5
@@ -99,7 +99,7 @@ no_rot = hf.make_rot_mat(0)
 # Inputs
 input_task = nidaqmx.Task()
 input_task.ai_channels.add_ai_voltage_chan("Dev1/ai0", min_val=0, max_val=5)
-input_task.ai_channels.add_ai_voltage_chan("Dev1/ai2", min_val=0, max_val=5)
+input_task.ai_channels.add_ai_voltage_chan("Dev1/ai1", min_val=0, max_val=5)
 input_task.timing.cfg_samp_clk_timing(
     fs, sample_mode=nidaqmx.constants.AcquisitionType.CONTINUOUS
 )
@@ -148,7 +148,6 @@ trial_summary_data_template = {
     "curs_y_end": [],
     "end_angles": [],
     "block": [],
-    "trial_delay": [],
 }
 
 # For online position data
@@ -245,15 +244,16 @@ for block in range(len(ExpBlocks)):
 
             current_pos = hf.get_xy(input_task)
             home.draw()
-            hf.set_position(current_target_pos, target, no_rot)
             hf.set_position(current_pos, int_cursor, no_rot)
             win.flip()
 
+        hf.set_position(current_target_pos, target, no_rot)
         pre_trial_clock.reset()
         while hf.contains(int_cursor, home):
             current_pos = hf.get_xy(input_task)
             home.draw()
             hf.set_position(current_pos, int_cursor, rot_mat)
+            
             target.draw()
             win.flip()
             position_data["wrist_x"].append(current_pos[0])
