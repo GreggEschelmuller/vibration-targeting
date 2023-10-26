@@ -338,7 +338,7 @@ for block in range(len(ExpBlocks)):
         block_data["trial_num"].append(i + 1)
         block_data["block"].append(ExpBlocks[block])
 
-        # Save data yo csv
+        # Save data to csv
         pd.DataFrame.from_dict(current_trial).to_csv(
             file_path + "_trial_" + str(i + 1) + ".csv", index=False
         )
@@ -346,13 +346,6 @@ for block in range(len(ExpBlocks)):
             file_path + "_position_" + str(i + 1) + ".csv", index=False
         )
 
-        # save data to excel
-        pd.DataFrame.from_dict(current_trial).to_excel(
-            file_path + "_trial_" + str(i + 1) + ".xlsx", index=False
-        )
-        pd.DataFrame.from_dict(position_data).to_excel(
-            file_path + "_position_" + str(i + 1) + ".xlsx", index=False
-        )
         # append trial file to block file
 
         del current_trial, position_data
