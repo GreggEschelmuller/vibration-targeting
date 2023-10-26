@@ -81,7 +81,7 @@ if not participant == 99:
         exit()
 
 # set up file path
-file_path = "data/P" + str(participant) + "/participant_" + str(participant)
+file_path = f"data/P{str(participant)}/p{str(participant)}"
 # experiment_info.to_csv(file_path + "_studyinfo.csv")
 
 print("Setting everything up...")
@@ -170,6 +170,7 @@ for block in range(len(ExpBlocks)):
 
     # Summary data dictionaries for this block
     block_data = copy.deepcopy(trial_summary_data_template)
+    file_ext = ExpBlocks[block]
 
     # starts NI DAQ task for data collection and output
     input_task.start()
@@ -338,15 +339,13 @@ for block in range(len(ExpBlocks)):
         block_data["trial_num"].append(i + 1)
         block_data["block"].append(ExpBlocks[block])
 
-        # Save data to csv
         pd.DataFrame.from_dict(current_trial).to_csv(
-            file_path + "_trial_" + str(i + 1) + ".csv", index=False
+            f"{file_path}_trial_{str(i+1)}_{file_ext}.csv", index=False
         )
         pd.DataFrame.from_dict(position_data).to_csv(
-            file_path + "_position_" + str(i + 1) + ".csv", index=False
+            f"{file_path}_position_{str(i+1)}_{file_ext}.csv", index=False
         )
 
-        # append trial file to block file
 
         del current_trial, position_data
 
@@ -358,9 +357,7 @@ for block in range(len(ExpBlocks)):
         on="trial_num",
     )
 
-    file_ext = ExpBlocks[block]
     trial_data.to_csv(file_path + "_" + file_ext + ".csv", index=False)
-    trial_data.to_excel(file_path + "_" + file_ext + ".xlsx", index=False)
 
     print("Data Succesfully Saved")
 
