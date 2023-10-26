@@ -257,11 +257,11 @@ for block in range(len(ExpBlocks)):
             current_pos = hf.get_xy(input_task)
             home.draw()
             hf.set_position(current_pos, int_cursor, rot_mat)
-            
+
             target.draw()
             win.flip()
             position_data["wrist_x"].append(current_pos[0])
-            position_data["wrist_y"].append(current_pos[0])
+            position_data["wrist_y"].append(current_pos[1])
             position_data["time"].append([pre_trial_clock.getTime()])
 
         if not condition.full_feedback[i]:
@@ -282,7 +282,7 @@ for block in range(len(ExpBlocks)):
 
             # Save position data
             position_data["wrist_x"].append(current_pos[0])
-            position_data["wrist_y"].append(current_pos[0])
+            position_data["wrist_y"].append(current_pos[1])
             position_data["time"].append(current_time)
 
             if hf.calc_amplitude(current_pos) >= hf.cm_to_pixel(
@@ -329,7 +329,7 @@ for block in range(len(ExpBlocks)):
         # append block data
         block_data["move_times"].append(current_time)
         block_data["wrist_x_end"].append(hf.pixel_to_cm(current_pos[0]))
-        block_data["wrist_y_end"].append(hf.pixel_to_cm(int_cursor.pos[0]))
+        block_data["wrist_y_end"].append(hf.pixel_to_cm(current_pos[1]))
         block_data["curs_x_end"].append(hf.pixel_to_cm(int_cursor.pos[0]))
         block_data["curs_y_end"].append(hf.pixel_to_cm(int_cursor.pos[1]))
         block_data["end_angles"].append(
