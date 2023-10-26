@@ -254,6 +254,9 @@ for block in range(len(ExpBlocks)):
 
         hf.set_position(current_target_pos, target, no_rot)
         pre_trial_clock.reset()
+
+        # Start vibration at target onset
+        output_task.write(vib_output)
         while hf.contains(int_cursor, home):
             current_pos = hf.get_xy(input_task)
             home.draw()
@@ -267,9 +270,6 @@ for block in range(len(ExpBlocks)):
 
         if not condition.full_feedback[i]:
             int_cursor.color = None
-
-        # Start vibration
-        output_task.write(vib_output)
 
         # run trial until time limit is reached or target is reached
         move_clock.reset()
