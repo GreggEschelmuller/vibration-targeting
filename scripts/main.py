@@ -1,7 +1,7 @@
 from psychopy import visual, core
 import numpy as np
 import pandas as pd
-import helper_functions as hf
+import src.lib as lib
 import pickle
 from datetime import datetime
 import copy
@@ -97,7 +97,7 @@ fs = 500
 timeLimit = 2
 
 # 0 deg rotation matrix to be used between trials (i.e. finding home)
-no_rot = hf.make_rot_mat(0)
+no_rot = lib.make_rot_mat(0)
 
 # Create NI channels
 # Inputs
@@ -133,14 +133,14 @@ home_clock = core.Clock()
 pre_trial_clock = core.Clock()
 
 home = visual.Circle(
-    win, radius=hf.cm_to_pixel(home_size), lineColor="red", fillColor=None
+    win, radius=lib.cm_to_pixel(home_size), lineColor="red", fillColor=None
 )
 
-home_range = visual.Circle(win, radius=hf.cm_to_pixel(home_range_size), lineColor=None)
+home_range = visual.Circle(win, radius=lib.cm_to_pixel(home_range_size), lineColor=None)
 
-int_cursor = visual.Circle(win, radius=hf.cm_to_pixel(cursor_size), fillColor="Black")
+int_cursor = visual.Circle(win, radius=lib.cm_to_pixel(cursor_size), fillColor="Black")
 
-target = visual.Circle(win, radius=hf.cm_to_pixel(target_size), fillColor="green")
+target = visual.Circle(win, radius=lib.cm_to_pixel(target_size), fillColor="green")
 
 # Data dicts for storing data
 trial_summary_data_template = {
@@ -166,7 +166,7 @@ print("Done set up")
 # -------------- start main experiment loop ------------------------------------
 input("Press enter to continue to first block ... ")
 for block in range(len(ExpBlocks)):
-    condition = hf.read_trial_data("Trials.xlsx", ExpBlocks[block])
+    condition = lib.read_trial_data("Trials.xlsx", ExpBlocks[block])
 
     # Summary data dictionaries for this block
     block_data = copy.deepcopy(trial_summary_data_template)
@@ -185,7 +185,7 @@ for block in range(len(ExpBlocks)):
         terminal_feedback = condition.terminal_feedback[i]  # Load this from the excel
         vibration = condition.vibration[i]
         trial_type = condition.trial_type[i]
-        current_target_pos = hf.calc_target_pos(
+        current_target_pos = lib.calc_target_pos(
             condition.target_pos[i], condition.target_amp[i]
         )
 
@@ -203,11 +203,11 @@ for block in range(len(ExpBlocks)):
         clamp = condition.clamp[i]
 
         if rotation:
-            rot_mat = hf.make_rot_mat(
+            rot_mat = lib.make_rot_mat(
                 np.radians(condition.rotation_angle[i] * rot_direction)
             )
         else:
-            rot_mat = hf.make_rot_mat(0)
+            rot_mat = lib.make_rot_mat(0)
 
         home.draw()
         int_cursor.color = None
@@ -216,16 +216,16 @@ for block in range(len(ExpBlocks)):
 
         # Checks if cursor is close to home and turns it white
         in_range = False
-        current_pos = hf.get_xy(input_task)
+        current_pos = lib.get_xy(input_task)
         int_cursor.pos = current_pos
         while not in_range:
-            if hf.contains(int_cursor, home_range):
+            if lib.contains(int_cursor, home_range):
                 in_range = True
                 int_cursor.color = "white"
                 int_cursor.draw()
                 win.flip()
-            current_pos = hf.get_xy(input_task)
-            hf.set_position(current_pos, int_cursor, no_rot)
+            current_pos = lib.get_xy(input_task)
+            lib.set_position(current_pos, int_cursor, no_rot)
             home.draw()
             win.flip()
 
@@ -233,34 +233,34 @@ for block in range(len(ExpBlocks)):
         is_home = False
         while not is_home:
             prev_pos = int_cursor.pos
-            if hf.contains(int_cursor, home):
+            if lib.contains(int_cursor, home):
                 home_clock.reset()
                 while True:
-                    current_pos = hf.get_xy(input_task)
+                    current_pos = lib.get_xy(input_task)
                     home.draw()
-                    hf.set_position(current_pos, int_cursor, no_rot)
+                    lib.set_position(current_pos, int_cursor, no_rot)
                     win.flip()
 
                     if home_clock.getTime() > 0.5:
                         is_home = True
                         break
-                    if not hf.contains(int_cursor, home):
+                    if not lib.contains(int_cursor, home):
                         break
 
-            current_pos = hf.get_xy(input_task)
+            current_pos = lib.get_xy(input_task)
             home.draw()
-            hf.set_position(current_pos, int_cursor, no_rot)
+            lib.set_position(current_pos, int_cursor, no_rot)
             win.flip()
 
-        hf.set_position(current_target_pos, target, no_rot)
+        lib.set_position(current_target_pos, target, no_rot)
         pre_trial_clock.reset()
 
         # Start vibration at target onset
         output_task.write(vib_output)
-        while hf.contains(int_cursor, home):
-            current_pos = hf.get_xy(input_task)
+        while lib.contains(int_cursor, home):
+            current_pos = lib.get_xy(input_task)
             home.draw()
-            hf.set_position(current_pos, int_cursor, rot_mat)
+            lib.set_position(current_pos, int_cursor, rot_mat)
 
             target.draw()
             win.flip()
@@ -276,9 +276,9 @@ for block in range(len(ExpBlocks)):
         while move_clock.getTime() < timeLimit:
             # Run trial
             current_time = move_clock.getTime()
-            current_pos = hf.get_xy(input_task)
+            current_pos = lib.get_xy(input_task)
             target.draw()
-            hf.set_position(current_pos, int_cursor)
+            lib.set_position(current_pos, int_cursor)
             win.flip()
 
             # Save position data
@@ -286,7 +286,7 @@ for block in range(len(ExpBlocks)):
             position_data["wrist_y"].append(current_pos[1])
             position_data["time"].append(current_time)
 
-            if hf.calc_amplitude(current_pos) >= hf.cm_to_pixel(
+            if lib.calc_amplitude(current_pos) >= lib.cm_to_pixel(
                 condition.target_amp[i]
             ):
                 output_task.write([False, False])
@@ -317,10 +317,10 @@ for block in range(len(ExpBlocks)):
 
         # append trial file
         current_trial["move_times"].append(current_time)
-        current_trial["wrist_x_end"].append(hf.pixel_to_cm(current_pos[0]))
-        current_trial["wrist_y_end"].append(hf.pixel_to_cm(current_pos[1]))
-        current_trial["curs_x_end"].append(hf.pixel_to_cm(int_cursor.pos[0]))
-        current_trial["curs_y_end"].append(hf.pixel_to_cm(int_cursor.pos[1]))
+        current_trial["wrist_x_end"].append(lib.pixel_to_cm(current_pos[0]))
+        current_trial["wrist_y_end"].append(lib.pixel_to_cm(current_pos[1]))
+        current_trial["curs_x_end"].append(lib.pixel_to_cm(int_cursor.pos[0]))
+        current_trial["curs_y_end"].append(lib.pixel_to_cm(int_cursor.pos[1]))
         current_trial["end_angles"].append(
             np.degrees(np.arctan2(int_cursor.pos[1], int_cursor.pos[0]))
         )
@@ -329,10 +329,10 @@ for block in range(len(ExpBlocks)):
 
         # append block data
         block_data["move_times"].append(current_time)
-        block_data["wrist_x_end"].append(hf.pixel_to_cm(current_pos[0]))
-        block_data["wrist_y_end"].append(hf.pixel_to_cm(current_pos[1]))
-        block_data["curs_x_end"].append(hf.pixel_to_cm(int_cursor.pos[0]))
-        block_data["curs_y_end"].append(hf.pixel_to_cm(int_cursor.pos[1]))
+        block_data["wrist_x_end"].append(lib.pixel_to_cm(current_pos[0]))
+        block_data["wrist_y_end"].append(lib.pixel_to_cm(current_pos[1]))
+        block_data["curs_x_end"].append(lib.pixel_to_cm(int_cursor.pos[0]))
+        block_data["curs_y_end"].append(lib.pixel_to_cm(int_cursor.pos[1]))
         block_data["end_angles"].append(
             np.degrees(np.arctan2(int_cursor.pos[1], int_cursor.pos[0]))
         )
