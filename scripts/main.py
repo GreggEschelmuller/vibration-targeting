@@ -8,6 +8,9 @@ import copy
 import os
 import nidaqmx
 
+# TO DO
+# - code in error into excel writing
+
 # ------------------Blocks to run ------------------
 # Use this to run whole protocol
 # make sure the strings match the names of the sheets in the excel
@@ -20,6 +23,7 @@ import nidaqmx
 
 # For testing a few trials
 ExpBlocks = ["Testing"]
+# ExpBlocks = ["Practice"]
 
 # ----------- Participant info ----------------
 
@@ -106,8 +110,8 @@ input_task.timing.cfg_samp_clk_timing(
 
 # Outputs - have to create separate tasks for input/output
 output_task = nidaqmx.Task()
-output_task.do_channels.add_do_chan("Dev1/port0/line0")
-output_task.do_channels.add_do_chan("Dev1/port0/line1")
+output_task.do_channels.add_do_chan("Dev1/port0/line0") # Extensor
+output_task.do_channels.add_do_chan("Dev1/port0/line1") # Flexor
 
 
 ## Psychopy set up
@@ -186,13 +190,13 @@ for block in range(len(ExpBlocks)):
 
         # Set up vibration output
         if condition.vibration[i] == 0:
-            vib_output = [False, False]
+            vib_output = [False, False] # Flexors and Extensors off
         elif condition.vibration[i] == 1:
-            vib_output = [True, True]
+            vib_output = [True, True] # Flexors and Extensors on
         elif condition.vibration[i] == 2:
-            vib_output = [True, False]
+            vib_output = [True, False] # Extensor on
         elif condition.vibration[i] == 3:
-            vib_output = [False, True]
+            vib_output = [False, True] # Flexor on
 
         rotation = condition.rotation[i]
         clamp = condition.clamp[i]
@@ -294,7 +298,7 @@ for block in range(len(ExpBlocks)):
 
                 # break trial loop
                 break
-
+        output_task.write([False, False])
         # Leave current window for 200ms
         core.wait(0.2, hogCPUperiod=0.2)
         int_cursor.color = None
