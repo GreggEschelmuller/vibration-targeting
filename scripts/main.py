@@ -2,7 +2,7 @@ from psychopy import visual, core
 import numpy as np
 import pandas as pd
 import src.lib as lib
-import pickle
+# import pickle
 from datetime import datetime
 import copy
 import os
@@ -11,28 +11,31 @@ import nidaqmx
 # TO DO
 # - code in error into excel writing
 
+# CHANGE FOR PARTICIPANT
+participant = 99
+
 # ------------------Blocks to run ------------------
 # Use this to run whole protocol
 # make sure the strings match the names of the sheets in the excel
-# ExpBlocks = [
-#     "Practice",
-#     "Baseline",
-#     "Exposure",
-#     "Post"
-#     ]
+ExpBlocks = [
+    "Practice",
+    "Baseline",
+    "Exposure",
+    "Post"
+    ]
 
 # For testing a few trials
-ExpBlocks = ["Testing"]
+# ExpBlocks = ["Testing"]
 # ExpBlocks = ["Practice"]
 
 # ----------- Participant info ----------------
 
 # For clamp and rotation direction
 rot_direction = 1  # 1 for forwrad, -1 for backward
-participant = 99
 
 
-study_id = "Wrist Visuomotor Rotation"
+
+study_id = "Wrist vibration targeting"
 experimenter = "Gregg"
 current_date = datetime.now()
 date_time_str = current_date.strftime("%Y-%m-%d %H:%M:%S")
