@@ -188,9 +188,18 @@ for block in range(len(ExpBlocks)):
         terminal_feedback = condition.terminal_feedback[i]  # Load this from the excel
         vibration = condition.vibration[i]
         trial_type = condition.trial_type[i]
-        current_target_pos = lib.calc_target_pos(
+
+        if condition.target_pos[i] == 90:
+            current_target_pos = lib.calc_target_pos(
             condition.target_pos[i], condition.target_amp[i]
-        )
+            )
+        else:
+            jitter = np.random.randint(-10,10)
+            current_target_pos = lib.calc_target_pos(
+            condition.target_pos[i], condition.target_amp[i]
+            )
+
+
 
         # Set up vibration output
         if condition.vibration[i] == 0:
@@ -255,6 +264,7 @@ for block in range(len(ExpBlocks)):
             lib.set_position(current_pos, int_cursor, no_rot)
             win.flip()
 
+        
         lib.set_position(current_target_pos, target, no_rot)
         pre_trial_clock.reset()
 
