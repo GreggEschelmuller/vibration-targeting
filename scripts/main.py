@@ -12,7 +12,7 @@ import nidaqmx
 # - code in error into excel writing
 
 # CHANGE FOR PARTICIPANT
-participant = 99
+participant = 1
 
 # ------------------Blocks to run ------------------
 # Use this to run whole protocol
@@ -20,8 +20,7 @@ participant = 99
 ExpBlocks = [
     "Practice",
     "Baseline",
-    "Exposure",
-    "Post"
+    "Testing",
     ]
 
 # For testing a few trials
@@ -155,6 +154,7 @@ trial_summary_data_template = {
     "curs_y_end": [],
     "end_angles": [],
     "block": [],
+    "target_angle": [],
 }
 
 # For online position data
@@ -190,14 +190,16 @@ for block in range(len(ExpBlocks)):
         trial_type = condition.trial_type[i]
 
         if condition.target_pos[i] == 90:
+            target_angle  = condition.target_pos[i]
             current_target_pos = lib.calc_target_pos(
-            condition.target_pos[i], condition.target_amp[i]
+            target_angle, condition.target_amp[i]
             )
         else:
-            jitter = np.random.randint(-10,10)
+            target_angle = condition.target_pos[i] + np.random.randint(-10,10)
             current_target_pos = lib.calc_target_pos(
-            condition.target_pos[i], condition.target_amp[i]
+            target_angle, condition.target_amp[i]
             )
+            
 
 
 
@@ -323,7 +325,7 @@ for block in range(len(ExpBlocks)):
         print(f"Trial {i+1} done.")
         print(f"Movement time: {round((current_time*1000),1)} ms")
         print(
-            f"Target position: {condition.target_pos[i]}     Cursor Position: {round(np.degrees(np.arctan2(int_cursor.pos[1], int_cursor.pos[0])), 2)}"
+            f"Target position: {target_angle}     Cursor Position: {round(np.degrees(np.arctan2(int_cursor.pos[1], int_cursor.pos[0])), 2)}"
         )
 
         print(" ")
@@ -339,6 +341,7 @@ for block in range(len(ExpBlocks)):
         )
         current_trial["trial_num"].append(i + 1)
         current_trial["block"].append(ExpBlocks[block])
+        current_trial['target_angle'].append(target_angle)
 
         # append block data
         block_data["move_times"].append(current_time)
@@ -351,6 +354,7 @@ for block in range(len(ExpBlocks)):
         )
         block_data["trial_num"].append(i + 1)
         block_data["block"].append(ExpBlocks[block])
+        block_data['target_angle'].append(target_angle)
 
         pd.DataFrame.from_dict(current_trial).to_csv(
             f"{file_path}_trial_{str(i+1)}_{file_ext}.csv", index=False
