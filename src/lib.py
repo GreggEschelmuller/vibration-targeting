@@ -10,11 +10,11 @@ import nidaqmx
 
 # 24 inch diag - resololution 1920x1080
 def cm_to_pixel(cm):
-    return cm * 91.79
+    return cm * 36.14
 
 
 def pixel_to_cm(pix):
-    return pix / 91.79
+    return pix / 36.24
 
 
 def read_trial_data(file_name, sheet=0):
@@ -56,7 +56,7 @@ def get_xy(task):
                 y = y_data[0] - 2.2
 
                 # Cursor gain
-                x *= 550
+                x *= 50
                 y *= 550
                 return [x, y]
 
@@ -86,26 +86,3 @@ def calc_amplitude(pos):
     # Calculates the amplitude of the cursor relative to middle
     amp = np.sqrt(np.dot(pos, pos))
     return amp
-
-
-def save_end_point(data_dict, current_time, current_pos, int_cursor, condition, t_num):
-    data_dict["Move_Times"].append(current_time)
-    data_dict["Wrist_x_end"].append(current_pos[0])
-    data_dict["Wrist_y_end"].append(current_pos[1])
-    data_dict["Curs_x_end"].append(int_cursor.pos[0])
-    data_dict["Curs_y_end"].append(int_cursor.pos[1])
-    data_dict["Target_pos"].append(condition.target_pos[t_num])
-    data_dict["Rotation"].append(condition.rotation[t_num])
-    data_dict["End_Angles"].append(
-        np.degrees(np.arctan2(int_cursor.pos[1], int_cursor.pos[0]))
-    )
-    return data_dict
-
-
-def save_position_data(data_dict, int_cursor, current_pos, current_time):
-    data_dict["Curs_x_pos"] = int_cursor.pos[0]
-    data_dict["Curs_y_pos"] = int_cursor.pos[1]
-    data_dict["Wrist_x_pos"] = current_pos[0]
-    data_dict["Wrist_y_pos"] = current_pos[1]
-    data_dict["Time"] = current_time
-    return data_dict

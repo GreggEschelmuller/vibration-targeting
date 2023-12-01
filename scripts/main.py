@@ -91,9 +91,9 @@ print("Setting everything up...")
 # ------------------------ Set up --------------------------------
 
 # Variables set up
-cursor_size = 0.075
-target_size = 0.1
-home_size = 0.15
+cursor_size = 0.5
+target_size = 1
+home_size = 1
 home_range_size = home_size * 5
 fs = 500
 timeLimit = 2

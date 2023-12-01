@@ -36,4 +36,3 @@ print("Vibration off")
 output_task.stop()
 output_task.close()
 
-
