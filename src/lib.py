@@ -15,12 +15,14 @@ def configure_input(fs):
     input_task.timing.cfg_samp_clk_timing(
         fs, sample_mode=nidaqmx.constants.AcquisitionType.CONTINUOUS
     )
+    return input_task
 
 def configure_output():
     # Outputs - have to create separate tasks for input/output
     output_task = nidaqmx.Task()
     output_task.do_channels.add_do_chan("Dev1/port0/line0") # Extensor
     output_task.do_channels.add_do_chan("Dev1/port0/line1") # Flexor
+    return output_task
 
 def generate_trial_dict():
     template = {
@@ -84,9 +86,9 @@ def get_xy(task):
         vals = task.read(
             number_of_samples_per_channel=nidaqmx.constants.READ_ALL_AVAILABLE
         )
-        if vals == None:
+        if len(vals[0]) == 0:
             continue
-        elif not vals == None:
+        else:
             x_data = vals[0]
             y_data = vals[1]
             return [x_data[-1], y_data[-1]]

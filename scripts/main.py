@@ -12,19 +12,19 @@ import nidaqmx
 # - code in error into excel writing
 
 # CHANGE FOR PARTICIPANT
-participant = 1
+participant = 98
 
 break_trials = 60
 
 # ------------------Blocks to run -------------------------------------------------
 # Use this to run whole protocol
 # make sure the strings match the names of the sheets in the excel
-ExpBlocks = ["Practice"]
+# ExpBlocks = ["Practice"]
 
-ExpBlocks = [
-    "Baseline",
-    "Testing",
-    ]
+# ExpBlocks = [
+#     "Baseline",
+#     "Testing",
+#     ]
 
 
 # For piloting
@@ -74,10 +74,10 @@ print("Setting everything up...")
 # ------------------------ Set up --------------------------------
 
 # Variables set up
-cursor_size = 0.5
-target_size = 1
-home_size = 1
-home_range_size = home_size * 5
+cursor_size = 0.2
+target_size = 0.3
+home_size = 0.4
+home_range_size = home_size * 7
 fs = 500
 timeLimit = 2
 
@@ -124,6 +124,9 @@ for block in range(len(ExpBlocks)):
 
 
     for i in range(len(condition.trial_num)):
+        if np.isnan(condition.trial_num[i]):
+            break
+        print(condition.trial_num[i])
         # Creates dictionary for single trial
         current_trial = lib.generate_trial_dict()
         position_data = lib.generate_position_dict()
@@ -227,6 +230,7 @@ for block in range(len(ExpBlocks)):
         # Start vibration at target onset
         output_task.write(vib_output)
         while lib.contains(int_cursor, home):
+            current_time = trial_clock.getTime()
             pot_data = lib.get_xy(input_task)
             current_pos = [lib.x_volt_to_pixel(pot_data[0]), lib.y_volt_to_pixel(pot_data[1])]
             home.draw()
@@ -235,7 +239,7 @@ for block in range(len(ExpBlocks)):
             target.draw()
             win.flip()
             position_data['x_volts'].append(pot_data[0])
-            position_data['x_volts'].append(pot_data[1])
+            position_data['y_volts'].append(pot_data[1])
             position_data["wrist_x"].append(current_pos[0])
             position_data["wrist_y"].append(current_pos[1])
             position_data["curs_x"].append(int_cursor.pos[0])
@@ -259,7 +263,7 @@ for block in range(len(ExpBlocks)):
 
             # Save position data
             position_data['x_volts'].append(pot_data[0])
-            position_data['x_volts'].append(pot_data[1])
+            position_data['y_volts'].append(pot_data[1])
             position_data["wrist_x"].append(current_pos[0])
             position_data["wrist_y"].append(current_pos[1])
             position_data["curs_x"].append(int_cursor.pos[0])
@@ -273,25 +277,27 @@ for block in range(len(ExpBlocks)):
                 # Show terminal feedback
                 if condition.terminal_feedback[i]:
                     int_cursor.color = "White"
-                    int_cursor.draw()
                     target.draw()
+                    int_cursor.draw()
                     win.flip()
 
                 # break trial loop
                 break
-        output_task.write([False, False])
         # Leave current window for 300ms
         display_clock.reset()
         while display_clock.getTime() < 0.3:
             position_data['x_volts'].append(pot_data[0])
-            position_data['x_volts'].append(pot_data[1])
+            position_data['y_volts'].append(pot_data[1])
             position_data["wrist_x"].append(current_pos[0])
             position_data["wrist_y"].append(current_pos[1])
             position_data["curs_x"].append(int_cursor.pos[0])
             position_data["curs_y"].append(int_cursor.pos[1])
             position_data["time"].append([trial_clock.getTime()])
 
+        input_task.stop()
+        output_task.stop()
         input_task.close()
+        output_task.close()
         int_cursor.color = None
         int_cursor.draw()
         win.flip()
@@ -335,6 +341,7 @@ for block in range(len(ExpBlocks)):
         pd.DataFrame.from_dict(current_trial).to_csv(
             f"{file_path}_trial_{str(i+1)}_{file_ext}.csv", index=False
         )
+        
         pd.DataFrame.from_dict(position_data).to_csv(
             f"{file_path}_position_{str(i+1)}_{file_ext}.csv", index=False
         )
@@ -357,10 +364,5 @@ for block in range(len(ExpBlocks)):
     print("Data Succesfully Saved")
 
     del condition, trial_data, block_data
-    input_task.stop()
-    output_task.stop()
     input("Press enter to continue to next block ... ")
-
-input_task.close()
-output_task.close()
 print("Experiment Done")
