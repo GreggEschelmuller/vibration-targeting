@@ -56,7 +56,7 @@ def get_xy(task):
                 y = y_data[0] - 2.2
 
                 # Cursor gain
-                x *= 50
+                x *= 550
                 y *= 550
                 return [x, y]
 
