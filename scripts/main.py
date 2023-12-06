@@ -2,33 +2,27 @@ from psychopy import visual, core
 import numpy as np
 import pandas as pd
 import src.lib as lib
-# import pickle
 from datetime import datetime
-import copy
 import os
-import nidaqmx
-
-# TO DO
-# - code in error into excel writing
 
 # CHANGE FOR PARTICIPANT
-participant = 98
+participant = 1
 
-break_trials = 60
+break_trials = 84
 
 # ------------------Blocks to run -------------------------------------------------
 # Use this to run whole protocol
 # make sure the strings match the names of the sheets in the excel
 # ExpBlocks = ["Practice"]
 
-# ExpBlocks = [
-#     "Baseline",
-#     "Testing",
-#     ]
+ExpBlocks = [
+    "Baseline",
+    "Testing",
+    ]
 
 
 # For piloting
-ExpBlocks = ["piloting"]
+# ExpBlocks = ["piloting"]
 
 # ----------- Participant info -------------------------------------------------
 

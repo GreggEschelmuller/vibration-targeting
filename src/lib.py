@@ -60,11 +60,11 @@ def pixel_to_cm(pix):
     return pix / 36.24
 
 def x_volt_to_pixel(volt):
-    pix = (volt - 2.2) * 550
+    pix = (volt - 2.4) * 550
     return pix
 
 def y_volt_to_pixel(volt):
-    pix = (volt - 2.2) * 550
+    pix = (volt - 2.4) * 550
     return pix
 
 def read_trial_data(file_name, sheet=0):

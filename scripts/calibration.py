@@ -10,12 +10,12 @@ import nidaqmx
 
 
 # Variables set up
-cursor_size = 0.5
-target_size = 1
-home_size = 1
-home_range_size = home_size * 5
+cursor_size = 0.2
+target_size = 0.3
+home_size = 0.4
+home_range_size = home_size * 7
 fs = 500
-timeLimit = 2
+timeLimit = 30
 
 # 0 deg rotation matrix to be used between trials (i.e. finding home)
 no_rot = lib.make_rot_mat(0)
@@ -45,14 +45,15 @@ win = visual.Window(
 timer = core.Clock()
 
 int_cursor = visual.Circle(win, radius=lib.cm_to_pixel(cursor_size), fillColor="white")
-arc = visual.Circle(win, radius=lib.cm_to_pixel(3), lineColor="blue", fillColor=None, edges=200)
+arc = visual.Circle(win, radius=lib.cm_to_pixel(7), lineColor="blue", fillColor=None, edges=200)
 home = visual.Circle(
     win, radius=lib.cm_to_pixel(home_size), lineColor="red", fillColor=None
 )
 input_task.start()
-while timer.getTime() < 30:
+while timer.getTime() < timeLimit:
     arc.draw()
-    current_pos = lib.get_xy(input_task)
+    pot_data = lib.get_xy(input_task)
+    current_pos = [lib.x_volt_to_pixel(pot_data[0]), lib.y_volt_to_pixel(pot_data[1])]
     lib.set_position(current_pos, int_cursor, no_rot)
     home.draw()
     win.flip()
