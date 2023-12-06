@@ -8,14 +8,64 @@ import pandas as pd
 import nidaqmx
 
 
+def configure_input(fs):
+    input_task = nidaqmx.Task()
+    input_task.ai_channels.add_ai_voltage_chan("Dev1/ai0", min_val=0, max_val=5)
+    input_task.ai_channels.add_ai_voltage_chan("Dev1/ai1", min_val=0, max_val=5)
+    input_task.timing.cfg_samp_clk_timing(
+        fs, sample_mode=nidaqmx.constants.AcquisitionType.CONTINUOUS
+    )
+    return input_task
+
+def configure_output():
+    # Outputs - have to create separate tasks for input/output
+    output_task = nidaqmx.Task()
+    output_task.do_channels.add_do_chan("Dev1/port0/line0") # Extensor
+    output_task.do_channels.add_do_chan("Dev1/port0/line1") # Flexor
+    return output_task
+
+def generate_trial_dict():
+    template = {
+        "trial_num": [],
+        "move_times": [],
+        "wrist_x_end": [],
+        "wrist_y_end": [],
+        "curs_x_end": [],
+        "curs_y_end": [],
+        "end_angles": [],
+        "block": [],
+        "target_angle": [],
+        'rt': [],
+    }
+    return template
+
+def generate_position_dict():
+    template = {
+        "x_volts": [],
+        "y_volts": [],
+        "wrist_x": [],
+        "wrist_y": [],
+        "curs_x": [],
+        "curs_y": [],
+        "time": [],
+    }
+    return template
+
 # 24 inch diag - resololution 1920x1080
 def cm_to_pixel(cm):
-    return cm * 91.79
+    return cm * 36.14
 
 
 def pixel_to_cm(pix):
-    return pix / 91.79
+    return pix / 36.24
 
+def x_volt_to_pixel(volt):
+    pix = (volt - 2.4) * 550
+    return pix
+
+def y_volt_to_pixel(volt):
+    pix = (volt - 2.4) * 550
+    return pix
 
 def read_trial_data(file_name, sheet=0):
     # Reads in the trial data from the excel file
@@ -31,34 +81,49 @@ def exp_filt(pos0, pos1, alpha=0.5):
     y = (pos0[1] * alpha) + (pos1[1] * (1 - alpha))
     return [x, y]
 
-
 def get_xy(task):
     while True:
         vals = task.read(
             number_of_samples_per_channel=nidaqmx.constants.READ_ALL_AVAILABLE
         )
-        if vals == None:
+        if len(vals[0]) == 0:
             continue
-        elif not vals == None:
+        else:
             x_data = vals[0]
             y_data = vals[1]
+            return [x_data[-1], y_data[-1]]
 
-            # If buffer contains multiple data points take the lastest one
-            if len(x_data) > 1:
-                x_data = [x_data[-1]]
-            if len(y_data) > 1:
-                y_data = [y_data[-1]]
 
-            # I don't remember why this check is here, but it doesn't work without it
-            if not len(vals[0]) == 0:
-                # Offset cursor to middle position
-                x = x_data[0] - 2.2
-                y = y_data[0] - 2.2
 
-                # Cursor gain
-                x *= 550
-                y *= 550
-                return [x, y]
+
+# Turned into two separate functions
+# def get_xy(task):
+#     while True:
+#         vals = task.read(
+#             number_of_samples_per_channel=nidaqmx.constants.READ_ALL_AVAILABLE
+#         )
+#         if vals == None:
+#             continue
+#         elif not vals == None:
+#             x_data = vals[0]
+#             y_data = vals[1]
+
+#             # If buffer contains multiple data points take the lastest one
+#             if len(x_data) > 1:
+#                 x_data = [x_data[-1]]
+#             if len(y_data) > 1:
+#                 y_data = [y_data[-1]]
+
+#             # I don't remember why this check is here, but it doesn't work without it
+#             if not len(vals[0]) == 0:
+#                 # Offset cursor to middle position
+#                 x = x_data[0] - 2.2
+#                 y = y_data[0] - 2.2
+
+#                 # Cursor gain
+#                 x *= 550
+#                 y *= 550
+#                return [x, y]
 
 
 def contains(small_circ, large_circ):
@@ -86,26 +151,3 @@ def calc_amplitude(pos):
     # Calculates the amplitude of the cursor relative to middle
     amp = np.sqrt(np.dot(pos, pos))
     return amp
-
-
-def save_end_point(data_dict, current_time, current_pos, int_cursor, condition, t_num):
-    data_dict["Move_Times"].append(current_time)
-    data_dict["Wrist_x_end"].append(current_pos[0])
-    data_dict["Wrist_y_end"].append(current_pos[1])
-    data_dict["Curs_x_end"].append(int_cursor.pos[0])
-    data_dict["Curs_y_end"].append(int_cursor.pos[1])
-    data_dict["Target_pos"].append(condition.target_pos[t_num])
-    data_dict["Rotation"].append(condition.rotation[t_num])
-    data_dict["End_Angles"].append(
-        np.degrees(np.arctan2(int_cursor.pos[1], int_cursor.pos[0]))
-    )
-    return data_dict
-
-
-def save_position_data(data_dict, int_cursor, current_pos, current_time):
-    data_dict["Curs_x_pos"] = int_cursor.pos[0]
-    data_dict["Curs_y_pos"] = int_cursor.pos[1]
-    data_dict["Wrist_x_pos"] = current_pos[0]
-    data_dict["Wrist_y_pos"] = current_pos[1]
-    data_dict["Time"] = current_time
-    return data_dict
