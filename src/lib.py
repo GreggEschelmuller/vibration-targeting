@@ -48,6 +48,7 @@ def generate_position_dict():
         "curs_x": [],
         "curs_y": [],
         "time": [],
+        "move_index": [],
     }
     return template
 
@@ -60,11 +61,11 @@ def pixel_to_cm(pix):
     return pix / 36.24
 
 def x_volt_to_pixel(volt):
-    pix = (volt - 2.4) * 550
+    pix = (volt - 2.4) * 620
     return pix
 
 def y_volt_to_pixel(volt):
-    pix = (volt - 2.4) * 550
+    pix = (volt - 2.4) * 620
     return pix
 
 def read_trial_data(file_name, sheet=0):
@@ -91,8 +92,7 @@ def get_xy(task):
         else:
             x_data = vals[0]
             y_data = vals[1]
-            return [x_data[-1], y_data[-1]]
-
+        return [x_data[-1], y_data[-1]] 
 
 
 

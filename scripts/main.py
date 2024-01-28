@@ -6,7 +6,7 @@ from datetime import datetime
 import os
 
 # CHANGE FOR PARTICIPANT
-participant = 1
+participant = 99
 
 break_trials = 84
 
@@ -15,14 +15,14 @@ break_trials = 84
 # make sure the strings match the names of the sheets in the excel
 # ExpBlocks = ["Practice"]
 
-ExpBlocks = [
-    "Baseline",
-    "Testing",
-    ]
-
+# ExpBlocks = [
+#     "Baseline",
+#     "Testing",
+#     "Post"
+#     ]
 
 # For piloting
-# ExpBlocks = ["piloting"]
+ExpBlocks = ["piloting"]
 
 # ----------- Participant info -------------------------------------------------
 
@@ -73,7 +73,7 @@ target_size = 0.3
 home_size = 0.4
 home_range_size = home_size * 7
 fs = 500
-timeLimit = 2
+timeLimit = 1
 
 # 0 deg rotation matrix to be used between trials (i.e. finding home)
 no_rot = lib.make_rot_mat(0)
@@ -116,11 +116,10 @@ for block in range(len(ExpBlocks)):
     file_ext = ExpBlocks[block]
 
 
-
     for i in range(len(condition.trial_num)):
         if np.isnan(condition.trial_num[i]):
             break
-        print(condition.trial_num[i])
+        print(f"Starting trial {condition.trial_num[i]}")
         # Creates dictionary for single trial
         current_trial = lib.generate_trial_dict()
         position_data = lib.generate_position_dict()
@@ -146,12 +145,16 @@ for block in range(len(ExpBlocks)):
         # Set up vibration output
         if condition.vibration[i] == 0:
             vib_output = [False, False] # Flexors and Extensors off
+            print("No vibration")
         elif condition.vibration[i] == 1:
             vib_output = [True, True] # Flexors and Extensors on
+            print("Dual vibration")
         elif condition.vibration[i] == 2:
             vib_output = [True, False] # Extensor on
+            print("Extensor vibration")
         elif condition.vibration[i] == 3:
             vib_output = [False, True] # Flexor on
+            print("Flexor vibration")
 
         rotation = condition.rotation[i]
         clamp = condition.clamp[i]
@@ -232,6 +235,7 @@ for block in range(len(ExpBlocks)):
 
             target.draw()
             win.flip()
+            position_data['move_index'].append(0)
             position_data['x_volts'].append(pot_data[0])
             position_data['y_volts'].append(pot_data[1])
             position_data["wrist_x"].append(current_pos[0])
@@ -241,6 +245,9 @@ for block in range(len(ExpBlocks)):
             position_data["time"].append([trial_clock.getTime()])
 
         rt = trial_clock.getTime()
+
+        # mark when participant leaves home
+        position_data["move_index"][-1] = 1
 
         if not condition.full_feedback[i]:
             int_cursor.color = None
@@ -256,6 +263,7 @@ for block in range(len(ExpBlocks)):
             win.flip()
 
             # Save position data
+            position_data['move_index'].append(0)
             position_data['x_volts'].append(pot_data[0])
             position_data['y_volts'].append(pot_data[1])
             position_data["wrist_x"].append(current_pos[0])
@@ -267,6 +275,8 @@ for block in range(len(ExpBlocks)):
             if lib.calc_amplitude(current_pos) >= lib.cm_to_pixel(
                 condition.target_amp[i]
             ):
+                # mark when participant leaves home
+                position_data["move_index"][-1] = 1 
                 output_task.write([False, False])
                 # Show terminal feedback
                 if condition.terminal_feedback[i]:
@@ -277,33 +287,8 @@ for block in range(len(ExpBlocks)):
 
                 # break trial loop
                 break
-        # Leave current window for 300ms
-        display_clock.reset()
-        while display_clock.getTime() < 0.3:
-            position_data['x_volts'].append(pot_data[0])
-            position_data['y_volts'].append(pot_data[1])
-            position_data["wrist_x"].append(current_pos[0])
-            position_data["wrist_y"].append(current_pos[1])
-            position_data["curs_x"].append(int_cursor.pos[0])
-            position_data["curs_y"].append(int_cursor.pos[1])
-            position_data["time"].append([trial_clock.getTime()])
 
-        input_task.stop()
-        output_task.stop()
-        input_task.close()
-        output_task.close()
-        int_cursor.color = None
-        int_cursor.draw()
-        win.flip()
-        # Print trial information
-        print(f"Trial {i+1} done.")
-        print(f"Movement time: {round(((current_time - rt)*1000),1)} ms")
-        print(
-            f"Target position: {target_angle}     Cursor Position: {round(np.degrees(np.arctan2(int_cursor.pos[1], int_cursor.pos[0])), 2)}"
-        )
-
-        print(" ")
-
+        # Assign end point variables
         # append trial file
         current_trial["move_times"].append(current_time - rt)
         current_trial['rt'].append(rt)
@@ -331,6 +316,42 @@ for block in range(len(ExpBlocks)):
         block_data["trial_num"].append(i + 1)
         block_data["block"].append(ExpBlocks[block])
         block_data['target_angle'].append(target_angle)
+
+
+        output_task.write([False, False])
+        # Leave current window for 300ms and collect data to position files
+        display_clock.reset()
+        while display_clock.getTime() < 0.3:
+            current_time = trial_clock.getTime()
+            pot_data = lib.get_xy(input_task)
+            current_pos = [lib.x_volt_to_pixel(pot_data[0]), lib.y_volt_to_pixel(pot_data[1])]
+            position_data['move_index'].append(0)
+            position_data['x_volts'].append(pot_data[0])
+            position_data['y_volts'].append(pot_data[1])
+            position_data["wrist_x"].append(current_pos[0])
+            position_data["wrist_y"].append(current_pos[1])
+            position_data["curs_x"].append(int_cursor.pos[0])
+            position_data["curs_y"].append(int_cursor.pos[1])
+            position_data["time"].append([trial_clock.getTime()])
+
+        input_task.stop()
+        output_task.stop()
+        input_task.close()
+        output_task.close()
+        int_cursor.color = None
+        int_cursor.draw()
+        win.flip()
+        # Print trial information
+        print(f"Trial {i+1} done.")
+        print(f"Movement time: {round(((current_time - rt)*1000),1)} ms")
+        print(
+            f"Target position: {target_angle} - \
+Cursor Position: {round(np.degrees(np.arctan2(int_cursor.pos[1], int_cursor.pos[0])), 2)} - \
+Error: {round(target_angle - np.degrees(np.arctan2(int_cursor.pos[1], int_cursor.pos[0])),2)}"
+        )
+
+        print(" ")
+
 
         pd.DataFrame.from_dict(current_trial).to_csv(
             f"{file_path}_trial_{str(i+1)}_{file_ext}.csv", index=False
