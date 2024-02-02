@@ -21,6 +21,9 @@ break_trials = 84
 #     "Post"
 #     ]
 
+# ExpBlocks = ['Testing']
+# ExpBlocks = ['Post']
+
 # For piloting
 ExpBlocks = ["piloting"]
 
@@ -115,7 +118,7 @@ for block in range(len(ExpBlocks)):
     block_data = lib.generate_trial_dict()
     file_ext = ExpBlocks[block]
 
-
+    # for i in range(408, len(condition.trial_num)):
     for i in range(len(condition.trial_num)):
         if np.isnan(condition.trial_num[i]):
             break
@@ -247,7 +250,10 @@ for block in range(len(ExpBlocks)):
         rt = trial_clock.getTime()
 
         # mark when participant leaves home
-        position_data["move_index"][-1] = 1
+        try:    
+            position_data["move_index"][-1] = 1
+        except Exception as e:
+            print(f"Error has been caught: {e}. Continuing with program")
 
         if not condition.full_feedback[i]:
             int_cursor.color = None
@@ -276,6 +282,10 @@ for block in range(len(ExpBlocks)):
                 condition.target_amp[i]
             ):
                 # mark when participant leaves home
+                try:    
+                    position_data["move_index"][-1] = 1
+                except Exception as e:
+                    print(f"Error has been caught: {e}. Continuing with program")
                 position_data["move_index"][-1] = 1 
                 output_task.write([False, False])
                 # Show terminal feedback
@@ -317,6 +327,7 @@ for block in range(len(ExpBlocks)):
         block_data["block"].append(ExpBlocks[block])
         block_data['target_angle'].append(target_angle)
 
+        movement_time = current_time - rt
 
         output_task.write([False, False])
         # Leave current window for 300ms and collect data to position files
@@ -343,7 +354,7 @@ for block in range(len(ExpBlocks)):
         win.flip()
         # Print trial information
         print(f"Trial {i+1} done.")
-        print(f"Movement time: {round(((current_time - rt)*1000),1)} ms")
+        print(f"Movement time: {round(((movement_time)*1000),1)} ms")
         print(
             f"Target position: {target_angle} - \
 Cursor Position: {round(np.degrees(np.arctan2(int_cursor.pos[1], int_cursor.pos[0])), 2)} - \

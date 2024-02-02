@@ -1,7 +1,7 @@
 import nidaqmx
 from psychopy import core
 
-# 1 for vib 1, 2 for vib 2, 3 for both
+# 1 for vib 1 (extensor), 2 for vib 2 (Flexor), 3 for both
 vibration = 3
 
 vib_off = [False, False] # Flexors and Extensors off
