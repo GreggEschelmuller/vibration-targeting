@@ -6,7 +6,7 @@ from datetime import datetime
 import os
 
 # CHANGE FOR PARTICIPANT
-participant = 99
+participant = 9
 
 break_trials = 84
 
@@ -15,17 +15,17 @@ break_trials = 84
 # make sure the strings match the names of the sheets in the excel
 # ExpBlocks = ["Practice"]
 
-# ExpBlocks = [
-#     "Baseline",
-#     "Testing",
-#     "Post"
-#     ]
+ExpBlocks = [
+    "Baseline",
+    "Testing",
+    "Post"
+    ]
 
 # ExpBlocks = ['Testing']
 # ExpBlocks = ['Post']
 
 # For piloting
-ExpBlocks = ["piloting"]
+# ExpBlocks = ["piloting"]
 
 # ----------- Participant info -------------------------------------------------
 
