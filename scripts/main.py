@@ -6,7 +6,7 @@ from datetime import datetime
 import os
 
 # CHANGE FOR PARTICIPANT
-participant = 9
+participant = 15
 
 break_trials = 84
 
