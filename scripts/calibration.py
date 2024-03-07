@@ -15,7 +15,7 @@ target_size = 0.3
 home_size = 0.4
 home_range_size = home_size * 7
 fs = 500
-timeLimit = 20
+timeLimit = 30
 
 # 0 deg rotation matrix to be used between trials (i.e. finding home)
 no_rot = lib.make_rot_mat(0)
